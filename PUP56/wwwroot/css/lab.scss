@@ -1,0 +1,105 @@
+﻿@import url('https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans&display=swap');
+
+$font-header: 'Patrick Hand', cursive;
+$font-regular: 'Open Sans', sans-serif;
+
+.app {
+    background: white;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 15px;
+    font-family: $font-regular;
+    font-size: .9rem;
+    border-bottom: 3px dashed #dedede;
+
+    .header {
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        font-family: $font-header;
+        font-size: 1.6rem;
+    }
+
+    .subheader {
+        display: flex;
+        justify-content: center;
+        padding: 5px;
+        font-family: $font-header;
+        font-size: 1rem;
+    }
+
+    .content {
+        display: flex;
+        flex-direction: column;
+        padding: 3px;
+
+        .search {
+            display: flex;
+            flex-direction: column;
+            align-content: center;
+            padding: 5px;
+
+            .item {
+                display: flex;
+                flex-direction: column;
+
+                .options {
+                    display: flex;
+                    justify-content: flex-end;
+
+                    .material-icons {
+                        transition: background 1s;
+
+                        &:hover {
+                            background: black;
+                            color: white;
+                        }
+                    }
+                }
+            }
+        }
+
+        .item {
+            display: flex;
+            flex-direction: row;
+            font-size: 1.3rem;
+        }
+
+        .result {
+            .item {
+                padding: 6px;
+
+                .left {
+                    display: flex;
+                    flex: 8;
+                    flex-direction: column;
+
+                    .title {
+                        justify-content: center;
+                        font-size: 1rem;
+                        font-weight: 600;
+                    }
+
+                    .overview {
+                        justify-content: center;
+                        font-size: .7rem;
+                        padding: 4px;
+                    }
+                }
+
+                .right {
+                    flex: 2;
+                    display: flex;
+                    flex-direction: column;
+                    align-content: center;
+                    justify-content: center;
+                    padding: 15px;
+                }
+            }
+        }
+    }
+}
+
+
