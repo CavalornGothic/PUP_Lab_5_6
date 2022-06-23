@@ -28,7 +28,14 @@
                     {
                         <b>Wyszukiwarka filmów według aktorów</b>
                         <label>Aktor</label>
-                        <input type="text" placeholder="imię i nazwisko" />
+                        <input type="text" placeholder="imię i nazwisko" @bind-value=_actorName />
+                        <button @onclick=AddActor>Dodaj do listy</button>
+                        <label>Lista aktorów do wyszukania (@_actors.Count):</label>
+                        @foreach(var actor in _actors)
+                        {
+                            <b>@actor</b>
+                        }
+                        <button @onclick=LoadMovieListTogether>Razem w obsadzie</button>
                     }
                 </div>
                 <div class="item">
@@ -52,6 +59,7 @@
         @if(_movies.Count > 0)
         {
              <div class="result">
+                 Znaleziono: @_movies.Count wyników
                 @foreach(var movie in _movies)
                 {
                     <div class="item">
@@ -84,11 +92,29 @@
     private int? _movieYear { get; set; }
     private string? _movieRegion { get; set; } = "pl";
 
+    // wyszukiwanie po aktorach
+    private List<string> _actors { get; set; } = new List<string>();
+    private string? _actorName { get; set; }
+
     private async Task LoadMovieList()
     {
         _movies.Clear();
         if (_searchType == 0)
             _movies = await GetListByMovieFilterAsync();
+        else if (_searchType == 1)
+            _movies = await GetListByActorFilterAsync();
+
+        if (_movies.Count > 0)
+            _showParameters = false;
+        else
+            _showParameters = true;
+    }
+
+    private async Task LoadMovieListTogether()
+    {
+        _movies.Clear();
+        var movies = await GetListByActorFilterAsync();
+        _movies = movies.GroupBy(x => x.Title).Where(g => g.Count() > 1).SelectMany(group => group).ToList().DistinctBy(x => x.Title).OrderBy(x => x.Title).ToList();
 
         if (_movies.Count > 0)
             _showParameters = false;
@@ -129,6 +155,49 @@
             foreach (dynamic data in dJson.results)
                 result.Add(new Movie { OriginalTitle = data.original_title, Title = data.title, Adult = data.adult, Budget = data.budget, Overview = data.overview, ReleaseDate = data.release_date, OriginalLanguage = data.original_language, VoteAverage = data.vote_average });
         return result;
+    }
+
+    private async Task<ICollection<Movie>> GetListByActorFilterAsync()
+    {
+        var result = new List<Movie>();
+        var idActors = new List<int>();
+        foreach(var actor in _actors)
+        {
+            var jsonSearchPeople = await _httpClient.GetStringAsync($"3/search/person?{_apiKey}&query={System.Web.HttpUtility.UrlEncode(actor)}");
+            if (String.IsNullOrEmpty(jsonSearchPeople))
+                continue;
+            dynamic dJson = JsonConvert.DeserializeObject(jsonSearchPeople);
+            if (dJson.results != null)
+                foreach(dynamic data in dJson.results)
+                    try { idActors.Add(Convert.ToInt32(data.id)); } catch { continue; }
+        }
+        result = (List<Movie>)await GetMovieByActorsIDAsync(idActors);
+        _actors.Clear();
+        return result;
+    }
+
+    private async Task<ICollection<Movie>> GetMovieByActorsIDAsync(ICollection<int> actorsID)
+    {
+        var result = new List<Movie>();
+        foreach(var actorID in actorsID)
+        {
+            var jsonWithMovies = await _httpClient.GetStringAsync($"3/person/{actorID}/movie_credits?{_apiKey}&language=pl");
+            if (String.IsNullOrEmpty(jsonWithMovies))
+                continue;
+            dynamic dJson = JsonConvert.DeserializeObject(jsonWithMovies);
+            if(dJson.cast != null)
+                foreach(dynamic data in dJson.cast)
+                    result.Add(new Movie { OriginalTitle = data.original_title, Title = data.title, Adult = data.adult, Budget = data.budget, Overview = data.overview, ReleaseDate = data.release_date, OriginalLanguage = data.original_language, VoteAverage = data.vote_average });
+        }
+        return result;
+    }
+
+    private void AddActor()
+    {
+        if (!String.IsNullOrEmpty(_actorName))
+            _actors.Add(_actorName);
+
+        _actorName = default;
     }
 
     private void ChangeSearchType(ChangeEventArgs arg)
